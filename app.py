@@ -1,77 +1,43 @@
 import streamlit as st
+import random
 
-# 맵 설정 (0=빈칸, 1=벽, 2=먹이)
-map_layout = [
-    [1,1,1,1,1,1,1],
-    [1,2,0,0,0,2,1],
-    [1,0,1,1,0,0,1],
-    [1,0,0,0,0,0,1],
-    [1,2,0,1,0,2,1],
-    [1,1,1,1,1,1,1]
-]
-
-rows = len(map_layout)
-cols = len(map_layout[0])
+st.title("🎰 슬롯머신 게임 (포인트 버전)")
+st.write("버튼을 눌러 슬롯을 돌려보세요! 💰")
 
 # 세션 상태 초기화
-if 'pacman_pos' not in st.session_state:
-    st.session_state.pacman_pos = [3,3]  # 초기 위치
-if 'score' not in st.session_state:
-    st.session_state.score = 0
+if "points" not in st.session_state:
+    st.session_state.points = 100  # 시작 포인트
 
-# 이동 함수
-def move(direction):
-    r, c = st.session_state.pacman_pos
-    if direction == "UP":
-        new_r, new_c = r-1, c
-    elif direction == "DOWN":
-        new_r, new_c = r+1, c
-    elif direction == "LEFT":
-        new_r, new_c = r, c-1
-    elif direction == "RIGHT":
-        new_r, new_c = r, c+1
+# 슬롯 심볼
+symbols = ["🍒", "🍋", "🍇", "⭐", "💎"]
+
+# 베팅 금액 설정
+bet = st.slider("베팅 포인트", 10, 50, 10)
+
+# 슬롯 돌리기
+if st.button("🎲 슬롯 돌리기"):
+    if st.session_state.points < bet:
+        st.error("포인트가 부족합니다! 게임 종료 😢")
     else:
-        return
-    
-    # 벽 체크
-    if map_layout[new_r][new_c] != 1:
-        st.session_state.pacman_pos = [new_r, new_c]
-        # 먹이 체크
-        if map_layout[new_r][new_c] == 2:
-            st.session_state.score += 1
-            map_layout[new_r][new_c] = 0
+        st.session_state.points -= bet
+        result = [random.choice(symbols) for _ in range(3)]
+        st.write(" | ".join(result))
 
-# 버튼으로 이동 제어
-st.title("🎮 스트림릿 팩맨")
-st.write(f"현재 점수: {st.session_state.score}")
+        # 결과 계산
+        if len(set(result)) == 1:  # 3개 일치
+            win = bet * 5
+            st.session_state.points += win
+            st.success(f"🎉 잭팟! {win} 포인트 획득!")
+        elif len(set(result)) == 2:  # 2개 일치
+            win = bet * 2
+            st.session_state.points += win
+            st.info(f"👍 2개 일치! {win} 포인트 획득!")
+        else:
+            st.warning("💨 아쉽지만 꽝!")
 
-col1, col2, col3 = st.columns(3)
-with col2:
-    if st.button("↑"): move("UP")
-col_left, col_middle, col_right = st.columns(3)
-with col_left:
-    if st.button("←"): move("LEFT")
-with col_middle:
-    st.write(" ")
-with col_right:
-    if st.button("→"): move("RIGHT")
-with col2:
-    if st.button("↓"): move("DOWN")
+st.write(f"💰 현재 포인트: **{st.session_state.points}**")
 
-# 맵 표시
-def display_map():
-    display = ""
-    for r in range(rows):
-        for c in range(cols):
-            if [r,c] == st.session_state.pacman_pos:
-                display += "😋"  # 팩맨
-            elif map_layout[r][c] == 1:
-                display += "⬛"  # 벽
-            elif map_layout[r][c] == 2:
-                display += "🍎"  # 먹이
-            else:
-                display += "⬜"  # 빈 공간
-        display += "\n"
-    st.text(display)
-
-display_map()
+# 리셋 버튼
+if st.button("🔄 포인트 초기화"):
+    st.session_state.points = 100
+    st.info("포인트가 100으로 초기화되었습니다.")
