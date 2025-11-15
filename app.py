@@ -2,38 +2,50 @@ import streamlit as st
 import random
 import time
 
-# 게임 설정
-st.title("🕹️ 간단한 점프맵 게임")
-st.write("스페이스바를 눌러 점프하세요!")
-
-# 게임 상태 초기화
+# 게임 초기화
 if "score" not in st.session_state:
     st.session_state.score = 0
-if "jump_height" not in st.session_state:
-    st.session_state.jump_height = 0
+if "target_x" not in st.session_state:
+    st.session_state.target_x = random.randint(0, 100)
+if "target_y" not in st.session_state:
+    st.session_state.target_y = random.randint(0, 100)
 
-# 점프 높이 슬라이더
-jump = st.slider("점프 높이 조정", min_value=1, max_value=100, value=50)
+# 화면을 클릭해서 발사하는 방식
+st.title("🎯 간단한 슈팅 게임")
+st.write("마우스를 클릭하여 타겟을 맞추세요!")
 
-# 점프 버튼 (간단한 버튼으로 점프 효과 시뮬레이션)
-if st.button("점프!"):
-    st.session_state.jump_height = jump
-    st.session_state.score += 1
+# 타겟 위치
+target_x = st.session_state.target_x
+target_y = st.session_state.target_y
 
-# 화면 표시 (게임을 위한 간단한 UI)
-st.write(f"현재 점프 높이: {st.session_state.jump_height}단위")
+# 목표 타겟 표시 (간단한 원)
+st.markdown(f'''
+    <div style="position: absolute; left: {target_x}%; top: {target_y}%; width: 5vw; height: 5vw; background-color: red; border-radius: 50%;"></div>
+''', unsafe_allow_html=True)
+
+# 클릭 좌표 (플레이어가 목표를 향해 총알 발사)
+click_x = st.slider("X 좌표 클릭 (0~100)", 0, 100)
+click_y = st.slider("Y 좌표 클릭 (0~100)", 0, 100)
+
+# 클릭 시 타겟 맞추기
+if st.button("발사!"):
+    distance = ((click_x - target_x) ** 2 + (click_y - target_y) ** 2) ** 0.5
+    if distance < 10:  # 타겟 범위 안에 들어오면 맞춘 것으로 간주
+        st.session_state.score += 1
+        st.session_state.target_x = random.randint(0, 100)  # 새 타겟 위치
+        st.session_state.target_y = random.randint(0, 100)  # 새 타겟 위치
+        st.success(f"타겟을 맞췄습니다! 🎯 점수: {st.session_state.score}")
+    else:
+        st.warning("타겟을 놓쳤습니다. 다시 시도해보세요!")
+
+# 점수 출력
 st.write(f"현재 점수: {st.session_state.score}")
 
-# 플랫폼 표시 (랜덤하게 위치 변경)
-platforms = [random.randint(20, 80) for _ in range(5)]
-st.write("플랫폼 위치: ", platforms)
-
-# 게임 종료 조건
-if st.session_state.jump_height > max(platforms):  # 점프 높이가 모든 플랫폼을 넘으면 게임 오버
+# 게임 종료 조건 (점수 10점 이상)
+if st.session_state.score >= 10:
     st.balloons()
-    st.success("게임 종료! 점프 성공!")
+    st.success("축하합니다! 10점을 달성했습니다. 게임 종료!")
     if st.button("게임 다시 시작"):
         st.session_state.score = 0
-        st.session_state.jump_height = 0
-else:
-    st.warning("플랫폼을 피하며 점프하세요!")
+        st.session_state.target_x = random.randint(0, 100)
+        st.session_state.target_y = random.randint(0, 100)
